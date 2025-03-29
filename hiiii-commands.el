@@ -1,7 +1,10 @@
 ;; front page commands
 
 (defun open-recent-files ()
-  (call-interactively 'counsel-recentf))
+  (call-interactively 'consult-recent-file))
+
+(defun open-projects ()
+  (call-interactively 'project-switch-project))
 
 (defun open-config ()
   (dired "~/.config/emacs/"))

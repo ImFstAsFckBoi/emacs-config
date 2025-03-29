@@ -1,129 +1,156 @@
-;;; editor.el
+;;; editor.el --- buffer editor config
 
-(global-display-line-numbers-mode)
 (electric-pair-mode electric-quote-mode)
+(global-display-line-numbers-mode)
 (electric-indent-mode -1)
+(indent-tabs-mode nil)
+(delete-selection-mode)
 
 
-(use-package "company"
-  :diminish company-mode
+;;; Corfu + yas
+(use-package "corfu"
   :ensure t
-  :config (global-company-mode)
-          (setq company-idle-delay 0)
-          (setq company-minimum-prefix-length 1))
+  :custom (corfu-cycle t)
+          (corfu-auto t)
+          (corfu-auto-prefix 2)
+          (corfu-auto-delay 0.0)
+          (corfu-quit-at-boundary 'separator)
+          (corfu-echo-documentation 0.1)
+  :config (global-corfu-mode)
+          (corfu-history-mode))
+
+(unless (display-graphic-p)
+  (use-package "corfu-terminal"
+    :after corfu
+    :ensure t
+    :config  (corfu-terminal-mode +1)))
+
+(use-package "nerd-icons-corfu"
+  :after corfu
+  :ensure t
+  :config (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter))
 
 (use-package "yasnippet"
   :ensure t
   :config (yas-global-mode 1))
 
-;; alt up/down to move lines al a vscode
+
+;;; Embark
+(use-package embark
+  :ensure t
+  :bind (("C-." . embark-act)
+         ("C-," . embark-act-noquit)
+         ("C-;" . embark-dwim)
+         ("C-h B" . embark-bindings))
+
+  :config  (defun embark-act-noquit ()
+             "Run action but don't quit the minibuffer afterwards."
+             (interactive)
+             (let ((embark-quit-after-action nil))
+               (embark-act)))
+
+             ;; Hide the mode line of the Embark live/completions buffers
+           (add-to-list 'display-buffer-alist
+                        '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+                          nil
+                          (window-parameters (mode-line-format . none)))))
+
+(use-package embark-consult
+  :after (embark consult)
+  :ensure t
+  :demand t
+  :hook (embark-collect-mode . consult-preview-at-point-mode))
+
+
+;;; Jinx spellcheck
+(use-package jinx
+  :ensure t
+  :demand t
+  :diminish jinx-mode
+  :after embark
+  :bind(:map embark-symbol-map ("$" . embark-jinx)
+        :map embark-general-map ("$" . embark-jinx)
+        :map embark-region-map ("$" . embark-jinx))
+  :config (global-jinx-mode))
+
+(use-package embark-jinx
+  :after (embark jinx)
+  :ensure t
+  :vc (:url "https://github.com/ImFstAsFckBoi/embark-jinx"))
+
+(use-package eros
+  :ensure t
+  :config (eros-mode 1))
+
+;; TODO: figure out
+;; (use-package blamer :ensure t)
+
+;;; General keybinds
+(use-package "beat+"
+  :ensure t
+  :vc (:url "https://github.com/ImFstAsFckBoi/beatp")
+  :bind ("C-w" . beatp-dwim-kill)
+        ("M-w" . beatp-dwim-save)
+        ("C-d" . beatp-select-around-word-or-next-match)
+        ("C-<right>" . beatp-right-to-boundary)
+        ("C-<left>" . beatp-left-to-boundary)
+        ("C-<delete>" . beatp-delete-right-to-boundary)
+        ("C-<backspace>" . beatp-delete-left-to-boundary)
+        ("<up>" . beatp-dwim-previous-line))
+
+;; Set alt up/down to move lines a la vscode
 (use-package "move-text"
   :ensure t
   :bind ("M-<down>" . move-text-down)
         ("M-<up>" . move-text-up))
 
-;; general keybinds
+
 (global-set-key (kbd "C-z") 'undo)
-(global-set-key (kbd "C-x z") 'suspend-frame)
 (global-set-key (kbd "C-/") 'comment-line)
-
-
-;; tab / indent
-(setq-default indent-tabs-mode nil)
-(setq-default tab-width 4)
-(setq indent-line-function 'insert-tab)
-
-(defun indent-region-custom(numSpaces)
-    (progn
-        (setq regionStart (line-beginning-position))
-        (setq regionEnd (line-end-position))
-
-        (when (use-region-p)
-            (setq regionStart (region-beginning))
-            (setq regionEnd (region-end)))
-        (save-excursion
-            (goto-char regionStart)
-            (setq start (line-beginning-position))
-            (goto-char regionEnd)
-            (setq end (line-end-position))
-            (indent-rigidly start end numSpaces)
-            (setq deactivate-mark nil))))
-
-
-(defun untab-region (N)
-    (interactive "p")
-    (indent-region-custom (- tab-width)))
-
-
-(defun tab-region (N)
-    (interactive "p")
-    (if (active-minibuffer-window)
-        (minibuffer-complete)
-    (if (string= (buffer-name) "*shell*")
-        (comint-dynamic-complete)
-    (if (use-region-p)
-        (indent-region-custom tab-width)
-        (tab-to-tab-stop)))))
-
-;; (global-set-key (kbd "<backtab>") 'untab-region)
-;; (global-set-key "\t" 'tab-region)
-
-
-;; Ctrl backspace like vscode
-(defun ryanmarcus/backward-kill-word ()
-  "Remove all whitespace if the character behind
-   the cursor is whitespace, otherwise remove a word."
-  (interactive)
-  (if (looking-back "[ \n\t]")
-      ;; delete horizontal space before us and then check to see if we
-      ;; are looking at a newline
-      (progn (delete-horizontal-space 't)
-             (while (looking-back "[ \n\t]")
-               (backward-delete-char 1)))
-    ;; otherwise, just do the normal kill word.
-    (backward-kill-word 1)))
-
-(global-set-key (kbd "C-<backspace>") 'ryanmarcus/backward-kill-word)
-
-
-;; replace region when pasting
-(defun killer-yank ()
-  "If region is active, delte it when yanking"
-  (interactive)
-  (if (region-active-p)
-      (delete-region (region-beginning) (region-end)))
-  (yank))
-
-
-
-(global-set-key (kbd "C-y") 'killer-yank)
-
-(defun vscp/C-d ()
-  "Mimic vscode’s C-d keybind"
-  (interactive)
-  (if (region-active-p)
-    (progn (mc/mark-next-like-this (region-beginning)))
-    (progn (left-word (mark-word)))))
-
+(global-set-key (kbd "C-r") 'repeat)
+(global-set-key (kbd "C-x a") 'mark-whole-buffer)
+(global-set-key (kbd "C-x C-.") 'emoji-search)
+(global-set-key (kbd "C-x C-,") 'emoji-insert)
+(global-set-key (kbd "C-p") 'search-backward)
+(global-set-key (kbd "C-n") 'search-forward)
 
 (use-package "multiple-cursors"
   :ensure t
-  :bind ("C-d" . 'vscp/C-d)
-    ("C-S-<up>" . 'mc/mark-previous-lines)
-    ("C-S-<down>" . 'mc/mark-next-lines))
+  :bind  ("M-S-<up>" . 'mc/mark-previous-lines)
+         ("M-S-<down>" . 'mc/mark-next-lines))
+
+(global-unset-key (kbd "<mouse-2>"))
+(global-unset-key (kbd "<mouse-3>"))
+(global-unset-key (kbd "C-q"))
 
 
-;; whitespace as dots
+;;; === render whitespace ================================================
 (global-whitespace-mode 1)
-(diminish 'whitespace-mode)
 (diminish 'global-whitespace-mode)
-(setq whitespace-display-mappings
-  '((space-mark   ?\     [?\u00B7] [?.])
-    (tab-mark     ?\t    [?\u21E5 ?\t] [?\u00BB ?\t] [?\\ ?\t])))
-;; (set-face-attribute 'whitespace-space nil :background nil :foreground "#52494e")
-(set-face-attribute 'whitespace-tab nil :background nil :foreground "#52494e")
+(diminish 'whitespace-mode)
 (setq-default whitespace-style
               '(face spaces tabs newline space-mark tab-mark newline-mark))
 
-;; unset bullshit
-(global-unset-key (kbd "<mouse-2>"))
+; set foreground (characters) to light gray
+(set-face-attribute 'whitespace-space nil :foreground "#52494e" :background nil)
+(set-face-attribute 'whitespace-tab nil :foreground "#52494e" :background nil)
+
+
+;; Whitespace color corrections.
+(use-package "color"
+  :config
+  (let* ((ws-lighten 30) ;; Amount in percentage to lighten up black.
+         (ws-color (color-lighten-name "#000000" ws-lighten)))
+    (custom-set-faces
+     `(whitespace-newline                ((t (:foreground ,ws-color))))
+     `(whitespace-missing-newline-at-eof ((t (:foreground ,ws-color))))
+     `(whitespace-space                  ((t (:foreground ,ws-color))))
+     `(whitespace-space-after-tab        ((t (:foreground ,ws-color))))
+     `(whitespace-space-before-tab       ((t (:foreground ,ws-color))))
+     `(whitespace-tab                    ((t (:foreground ,ws-color))))
+     `(whitespace-trailing               ((t (:foreground ,ws-color)))))))
+
+;; Set display styles for space (center dot) tab (|->)
+(setq whitespace-display-mappings
+      '((space-mark   ?\     [?\u00B7] [?.])
+        (tab-mark     ?\t    [?\u21E5 ?\t] [?\u00BB ?\t] [?\\ ?\t])))

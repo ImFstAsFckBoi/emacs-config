@@ -1,18 +1,21 @@
 
 
-;;; Hiiii!! :3
+; ✨ 🌸 Hiiii!! 🌸 :3 😼 ✨
 
-; recent files!
+; ✨ recent files!
     (open-recent-files)
 
-; repo!
+; 🌸 projects!
+    (open-projects)
+
+; 📂 repos!
     (open-repos)
 
-; configure more!
+; 🔧 configure more!
     (open-config)
 
-; update this page!
+; 📃 update this page!
     (save-hiiii)
 
-; bye bye!
+; 👋 bye bye!
     (quit-emacs)

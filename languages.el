@@ -1,25 +1,22 @@
 ;;; language-modes
 
-(use-package "python-mode"
+(use-package treesit-auto
   :ensure t
-  :mode ("\.py$"))
+  :config (treesit-auto-add-to-auto-mode-alist 'all)
+          (global-treesit-auto-mode))
+
+;; (use-package "flex")       ; (f)lex scanner generator language mode
+;; (use-package "bison-mode") ; bison / yacc parser generator language mode
+
+(defun setup-hide-ifdef ()
+  (hide-ifdef-mode t)
+  (hide-ifdef-toggle-shadowing)
+  (hide-ifdefs))
+
+(add-hook 'c-ts-mode-hook 'setup-hide-ifdef)
+(add-hook 'c++-ts-mode 'setup-hide-ifdef)
 
 
-(use-package "go-mode"
+(use-package markdown-mode
   :ensure t
-  :mode ("\.go$"))
-
-
-(use-package "rust-mode"
-  :ensure t
-  :mode ("\.rs$"))
-
-
-(use-package "zig-mode"
-  :ensure t
-  :mode ("\.zig$"))
-
-
-(require 'flex)       ; (f)lex scanner generator language mode
-(require 'bison-mode) ; bison / yacc parser generator language mode
-
+  :config (setq markdown-command "cmark"))
