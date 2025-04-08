@@ -1,6 +1,6 @@
 
 
-; ✨ 🌸 Hiiii!! 🌸 :3 😼 ✨
+; ✨ 🌸 Hiiii!! 🌸 ✨ :3
 
 ; ✨ recent files!
     (open-recent-files)

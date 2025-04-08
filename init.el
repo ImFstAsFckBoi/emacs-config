@@ -1,6 +1,5 @@
 ;; Emacs config
 
-
 ;; Early init
 (setq custom-file "~/.config/emacs/.custom.el")
 (add-to-list 'load-path "~/.config/emacs/elisp/")
@@ -14,6 +13,10 @@
 (package-initialize)
 
 
+(when (version<= emacs-version "28.1")
+  (defun length= (LIST N)
+    (eq (length LIST) N)))
+
 ;;; Basic setup 
 (recentf-mode)
 (tool-bar-mode -1)
@@ -23,9 +26,8 @@
 (xterm-mouse-mode 1)
 (setq-default scroll-step 1)
 (fset 'yes-or-no-p 'y-or-n-p)
-(setq-default indent-tabs-mode -1)
 (setq-default inhibit-startup-message t)
-(toggle-truncate-lines)
+
 (use-package "diminish" :ensure t)
 
 (unless (display-graphic-p)
@@ -48,10 +50,12 @@
 
 (insert-at mode-line-format 1 "  🌸 ")
 (insert-at mode-line-format 5 "✨ ")
-(use-package "spacious-padding"
-  :ensure t
-  :init (spacious-padding-mode)
-        (setq spacious-padding-widths '( :mode-line-width 2 )))
+
+(unless (version<= emacs-version "28.1")
+  (use-package "spacious-padding"
+	:ensure t
+	:init (spacious-padding-mode)
+    (setq spacious-padding-widths '( :mode-line-width 2 ))))
 
 ;; (use-package "gruber-darker-theme"
 ;;   :ensure t
@@ -113,10 +117,13 @@
             (format "https://www.ida.liu.se/~%s/" (upcase (read-string "Course code: "))))
           
           (add-to-list 'webjump-sites '("IDA course page" . webjump-ida-course-page))
-
+          (add-to-list 'webjump-sites '("Hoogλe" . [simple-query 
+                                                  "https://hoogle.haskell.org/"
+                                                  "https://hoogle.haskell.org/?hoogle="
+                                                  ""]))
           (add-to-list 'webjump-sites '("Python docs" .
                                         [simple-query 
-                                         "https://docs.python.org"
+                                         "https://docs.python.org/"
                                          "https://docs.python.org/3/search.html?q=" 
                                          ""])))
 
@@ -140,17 +147,6 @@
 
 (defalias 'make 'compile)
 
-(defun ghostty ()
-  "Open a Ghostty terminal"
-  (interactive)
-  (let ((process (start-process
-                  "ghostty"
-                  nil
-                  "ghostty"
-                  "/usr/bin/zsh")))
-    (set-process-query-on-exit-flag process nil)))
-
-
 (defun insert-list-reverse (list)
   (if (not list) nil
       (delete-char 1)
@@ -159,14 +155,33 @@
       (insert-list-reverse (cdr list))))
 
 (defun reverse-chars-region (beg end)
+  "Reverse the characters in a region"
   (interactive "r")
   (goto-char (- end 1))
   (insert-list-reverse (string-split (buffer-substring-no-properties beg end) "" t)))
 
+(defun is-on-top ()
+  (when (eq (count-windows) 2)
+    (< (nth 1 (window-edges (selected-window))) (nth 1 (window-edges (next-window))))))
+
+
+(defun rotate()
+  "Rotate two-window-setups between Left-Right split and Top-Bottom split"
+  (interactive)
+  (when (eq (count-windows) 2)
+    (let ((buffer (window-buffer (next-window)))
+          (mknew (if (is-on-top) '(split-window-right) '(split-window-below))))
+      (delete-other-windows)
+      (eval mknew)
+      (set-window-buffer (next-window) buffer))))
+
+
 
 ;;; === load other files ================================================
 (load-file (expand-file-name "lsp-dap.el" user-emacs-directory))
-(load-file (expand-file-name "consult.el" user-emacs-directory))
+(unless (version<= emacs-version "28.1")
+  (load-file (expand-file-name "consult.el" user-emacs-directory)))
+
 (load-file (expand-file-name "editor.el" user-emacs-directory))
 (load-file (expand-file-name "languages.el" user-emacs-directory))
 (load-file (expand-file-name "tempo.el" user-emacs-directory))

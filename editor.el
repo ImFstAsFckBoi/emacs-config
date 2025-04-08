@@ -3,32 +3,35 @@
 (electric-pair-mode electric-quote-mode)
 (global-display-line-numbers-mode)
 (electric-indent-mode -1)
-(indent-tabs-mode nil)
 (delete-selection-mode)
-
+(setq-default tab-width 4)
+(setq-default truncate-lines -1)
+(setq-default indent-tabs-mode nil)
+(setq indent-tabs-mode nil)
 
 ;;; Corfu + yas
-(use-package "corfu"
-  :ensure t
-  :custom (corfu-cycle t)
-          (corfu-auto t)
-          (corfu-auto-prefix 2)
-          (corfu-auto-delay 0.0)
-          (corfu-quit-at-boundary 'separator)
-          (corfu-echo-documentation 0.1)
-  :config (global-corfu-mode)
-          (corfu-history-mode))
+(unless (version<= emacs-version "28.1")
+  (use-package "corfu"
+    :ensure t
+    :custom (corfu-cycle t)
+            (corfu-auto t)
+            (corfu-auto-prefix 2)
+            (corfu-auto-delay 0.0)
+            (corfu-quit-at-boundary 'separator)
+            (corfu-echo-documentation 0.1)
+    :config (global-corfu-mode)
+            (corfu-history-mode))
 
-(unless (display-graphic-p)
-  (use-package "corfu-terminal"
+  (unless (display-graphic-p)
+    (use-package "corfu-terminal"
+      :after corfu
+      :ensure t
+      :config  (corfu-terminal-mode +1)))
+
+  (use-package "nerd-icons-corfu"
     :after corfu
     :ensure t
-    :config  (corfu-terminal-mode +1)))
-
-(use-package "nerd-icons-corfu"
-  :after corfu
-  :ensure t
-  :config (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter))
+    :config (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter)))
 
 (use-package "yasnippet"
   :ensure t
@@ -36,47 +39,49 @@
 
 
 ;;; Embark
-(use-package embark
-  :ensure t
-  :bind (("C-." . embark-act)
-         ("C-," . embark-act-noquit)
-         ("C-;" . embark-dwim)
-         ("C-h B" . embark-bindings))
+(unless (version<= emacs-version "28.1")
+  (use-package embark
+    :ensure t
+    :bind (("C-." . embark-act)
+           ("C-," . embark-act-noquit)
+           ("C-;" . embark-dwim)
+           ("C-h B" . embark-bindings))
 
-  :config  (defun embark-act-noquit ()
-             "Run action but don't quit the minibuffer afterwards."
-             (interactive)
-             (let ((embark-quit-after-action nil))
-               (embark-act)))
+    :config  (defun embark-act-noquit ()
+               "Run action but don't quit the minibuffer afterwards."
+               (interactive)
+               (let ((embark-quit-after-action nil))
+                 (embark-act)))
 
-             ;; Hide the mode line of the Embark live/completions buffers
-           (add-to-list 'display-buffer-alist
-                        '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
-                          nil
-                          (window-parameters (mode-line-format . none)))))
+    ;; Hide the mode line of the Embark live/completions buffers
+    (add-to-list 'display-buffer-alist
+                 '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+                   nil
+                   (window-parameters (mode-line-format . none)))))
 
-(use-package embark-consult
-  :after (embark consult)
-  :ensure t
-  :demand t
-  :hook (embark-collect-mode . consult-preview-at-point-mode))
+  (use-package embark-consult
+    :after (embark consult)
+    :ensure t
+    :demand t
+    :hook (embark-collect-mode . consult-preview-at-point-mode)))
 
 
 ;;; Jinx spellcheck
-(use-package jinx
-  :ensure t
-  :demand t
-  :diminish jinx-mode
-  :after embark
-  :bind(:map embark-symbol-map ("$" . embark-jinx)
-        :map embark-general-map ("$" . embark-jinx)
-        :map embark-region-map ("$" . embark-jinx))
-  :config (global-jinx-mode))
+(unless (version<= emacs-version "28.1")
+  (use-package jinx
+    :ensure t
+    :demand t
+    :diminish jinx-mode
+    :after embark
+    :bind(:map embark-symbol-map ("$" . embark-jinx)
+               :map embark-general-map ("$" . embark-jinx)
+               :map embark-region-map ("$" . embark-jinx))
+    :config (global-jinx-mode))
 
-(use-package embark-jinx
-  :after (embark jinx)
-  :ensure t
-  :vc (:url "https://github.com/ImFstAsFckBoi/embark-jinx"))
+  (use-package embark-jinx
+    :after (embark jinx)
+    :ensure t
+    :vc (:url "https://github.com/ImFstAsFckBoi/embark-jinx")))
 
 (use-package eros
   :ensure t
@@ -86,17 +91,18 @@
 ;; (use-package blamer :ensure t)
 
 ;;; General keybinds
-(use-package "beat+"
-  :ensure t
-  :vc (:url "https://github.com/ImFstAsFckBoi/beatp")
-  :bind ("C-w" . beatp-dwim-kill)
-        ("M-w" . beatp-dwim-save)
-        ("C-d" . beatp-select-around-word-or-next-match)
-        ("C-<right>" . beatp-right-to-boundary)
-        ("C-<left>" . beatp-left-to-boundary)
-        ("C-<delete>" . beatp-delete-right-to-boundary)
-        ("C-<backspace>" . beatp-delete-left-to-boundary)
-        ("<up>" . beatp-dwim-previous-line))
+(unless (version<= emacs-version "29.0")
+  (use-package "beat+"
+    :ensure t
+    :vc (:url "https://github.com/ImFstAsFckBoi/beatp")
+    :bind ("C-w" . beatp-dwim-kill)
+          ("M-w" . beatp-dwim-save)
+          ("C-d" . beatp-select-around-word-or-next-match)
+          ("C-<right>" . beatp-right-to-boundary)
+          ("C-<left>" . beatp-left-to-boundary)
+          ("C-<delete>" . beatp-delete-right-to-boundary)
+          ("C-<backspace>" . beatp-delete-left-to-boundary)
+          ("<up>" . beatp-dwim-previous-line)))
 
 ;; Set alt up/down to move lines a la vscode
 (use-package "move-text"

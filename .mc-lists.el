@@ -21,6 +21,7 @@
 	kill-region
 	killer-yank
 	lsp-ui-doc--handle-mouse-movement
+	promela-open-delimiter
 	ryanmarcus/backward-kill-word
 	shit
 	tab-region
