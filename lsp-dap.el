@@ -1,4 +1,4 @@
-;; eglot-lsp and dape-dap stuff
+; eglot-lsp and dape-dap stuff
 
 (use-package "eldoc-box"
   :ensure t

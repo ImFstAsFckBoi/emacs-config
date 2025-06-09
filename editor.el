@@ -90,6 +90,11 @@
 ;; TODO: figure out
 ;; (use-package blamer :ensure t)
 
+;; Git integrations
+(use-package "diff-hl"
+  :ensure t
+  :config (global-diff-hl-mode))
+
 ;;; General keybinds
 (unless (version<= emacs-version "29.0")
   (use-package "beat+"
@@ -134,29 +139,35 @@
 (global-whitespace-mode 1)
 (diminish 'global-whitespace-mode)
 (diminish 'whitespace-mode)
+
+(use-package "indent-guide"
+  :ensure t
+  :config (indent-guide-global-mode))
+
 (setq-default whitespace-style
               '(face spaces tabs newline space-mark tab-mark newline-mark))
+
+;; Set display styles for space (center dot) tab (|->)
+(setq whitespace-display-mappings
+      '((space-mark   ?\     [?\u00B7] [?.])
+        (tab-mark     ?\t    [?\u21E5 ?\t] [?\u00BB ?\t] [?\\ ?\t])))
 
 ; set foreground (characters) to light gray
 (set-face-attribute 'whitespace-space nil :foreground "#52494e" :background nil)
 (set-face-attribute 'whitespace-tab nil :foreground "#52494e" :background nil)
 
 
-;; Whitespace color corrections.
-(use-package "color"
-  :config
-  (let* ((ws-lighten 30) ;; Amount in percentage to lighten up black.
-         (ws-color (color-lighten-name "#000000" ws-lighten)))
-    (custom-set-faces
-     `(whitespace-newline                ((t (:foreground ,ws-color))))
-     `(whitespace-missing-newline-at-eof ((t (:foreground ,ws-color))))
-     `(whitespace-space                  ((t (:foreground ,ws-color))))
-     `(whitespace-space-after-tab        ((t (:foreground ,ws-color))))
-     `(whitespace-space-before-tab       ((t (:foreground ,ws-color))))
-     `(whitespace-tab                    ((t (:foreground ,ws-color))))
-     `(whitespace-trailing               ((t (:foreground ,ws-color)))))))
+;; ;; Whitespace color corrections.
+;; (use-package "color"
+;;   :config
+;;   (let* ((ws-lighten 30) ;; Amount in percentage to lighten up black.
+;;          (ws-color (color-lighten-name "#000000" ws-lighten)))
+;;     (custom-set-faces
+;;      `(whitespace-newline                ((t (:foreground ,ws-color))))
+;;      `(whitespace-missing-newline-at-eof ((t (:foreground ,ws-color))))
+;;      `(whitespace-space                  ((t (:foreground ,ws-color))))
+;;      `(whitespace-space-after-tab        ((t (:foreground ,ws-color))))
+;;      `(whitespace-space-before-tab       ((t (:foreground ,ws-color))))
+;;      `(whitespace-tab                    ((t (:foreground ,ws-color))))
+;;      `(whitespace-trailing               ((t (:foreground ,ws-color)))))))
 
-;; Set display styles for space (center dot) tab (|->)
-(setq whitespace-display-mappings
-      '((space-mark   ?\     [?\u00B7] [?.])
-        (tab-mark     ?\t    [?\u21E5 ?\t] [?\u00BB ?\t] [?\\ ?\t])))

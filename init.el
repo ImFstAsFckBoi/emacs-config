@@ -5,7 +5,12 @@
 (add-to-list 'load-path "~/.config/emacs/elisp/")
 (setq backup-directory-alist '(("." . "~/.config/emacs/backups/")))
 (setq auto-save-file-name-transforms  `((".*" "~/.config/emacs/saves/" t)))
+
+;; Interpreter performance
 (setq max-lisp-eval-depth 3200) ; cope and seethe
+(setq gc-cons-threshold #x40000000)
+(setq read-process-output-max (* 1024 1024 4))
+
 
 ;;; Package setup
 (require 'package)
@@ -17,11 +22,11 @@
   (defun length= (LIST N)
     (eq (length LIST) N)))
 
-;;; Basic setup 
+;;; Basic setup
 (recentf-mode)
 (tool-bar-mode -1)
 (menu-bar-mode -1)
-(tab-bar-mode 1)
+(tab-bar-mode -1)
 (scroll-bar-mode -1)
 (xterm-mouse-mode 1)
 (setq-default scroll-step 1)
@@ -41,37 +46,61 @@
 
 
 ;;; Theme, font & looks
-(set-face-attribute 'default nil :height 160)
+(use-package "adwaita-dark-theme"
+  :ensure t
+  :config (load-theme 'adwaita-dark t))
+
+(adwaita-dark-theme-arrow-fringe-bmp-enable)
+(eval-after-load 'neotree #'adwaita-dark-theme-neotree-configuration-enable)
+(eval-after-load 'diff-hl #'adwaita-dark-theme-diff-hl-fringe-bmp-enable)
+(eval-after-load 'flymake #'adwaita-dark-theme-flymake-fringe-bmp-enable)
+
+;; Custom elbox-doc setup
+(eval-after-load 'eldoc-box '(set-face-attribute 'eldoc-box-body nil :background "gray19"))
+(eval-after-load 'eldoc-box '(set-face-attribute 'eldoc-box-border nil :background "gray19"))
+(eval-after-load 'eldoc-box '(set-face-attribute 'eldoc-box-border nil :height 140))
+
+(set-face-attribute 'default nil :height 140)
 (set-face-attribute 'mode-line-buffer-id nil :foreground "#ffbcd8")
+
+;; (custom-set-faces '(font-lock-variable-name-face ((t (:foreground "#7d8ac7")))))
+;; (custom-set-faces '(font-lock-function-name-face ((t (:foreground "#5bc8af")))))
+;; (custom-set-faces '(font-lock-function-call-face ((t (:foreground "#5bc8af")))))
+
+
+(add-to-list 'default-frame-alist `(font . "Adwaita Mono"))
+(set-fontset-font t #x1F5BF (font-spec :family "Noto Sans Symbols 2") nil 'prepend)
+
+;; (add-to-list 'default-frame-alist `(font . "monospace"))
+;; (add-to-list 'default-frame-alist `(font . "ComicShannsMono Nerd Font Mono"))
+;; (add-to-list 'default-frame-alist `(font . "Iosevka Nerd Font"))
 
 (defun insert-at (LIST N VAL)
   (let ((trail (nthcdr N LIST)))
     (setf (nthcdr N LIST) (cons VAL trail))))
 
-(insert-at mode-line-format 1 "  🌸 ")
-(insert-at mode-line-format 5 "✨ ")
+;; (insert-at mode-line-format 1 "  🌸 ")
+;; (insert-at mode-line-format 5 "✨ ")
 
-(unless (version<= emacs-version "28.1")
-  (use-package "spacious-padding"
-	:ensure t
-	:init (spacious-padding-mode)
-    (setq spacious-padding-widths '( :mode-line-width 2 ))))
-
-;; (use-package "gruber-darker-theme"
-;;   :ensure t
-;;   :config (load-theme 'gruber-darker t))
-
-(use-package "doom-themes"
+(use-package mood-line
   :ensure t
-  :config (load-theme 'doom-one t))
+  ;; Enable mood-line
+  :config (mood-line-mode)
 
-(add-to-list 'default-frame-alist `(font . "monospace"))
-;; (add-to-list 'default-frame-alist `(font . "ComicShannsMono Nerd Font Mono"))
-;; (add-to-list 'default-frame-alist `(font . "Iosevka Nerd Font"))
+  ;; Use pretty Fira Code-compatible glyphs
+  :custom (mood-line-glyph-alist mood-line-glyphs-fira-code))
 
 
 ;;; General keybinds
-(global-set-key (kbd "C-x f") 'recentf)
+
+(defun find-file-dwim ()
+  "Find recent files or project files"
+  (interactive)
+  (if (project-current)
+      (call-interactively 'project-find-file)
+      (call-interactively 'recentf)))
+
+(global-set-key (kbd "C-x f") 'find-file-dwim)
 (global-set-key (kbd "C-x z") 'suspend-frame)
 (global-set-key (kbd "C-x m") 'switch-to-minibuffer)
 
@@ -91,13 +120,11 @@
   :config (defalias 'zi 'zoxide-find-file)
           (defalias 'zi-cd 'zoxide-cd))
 
-(use-package "treemacs"
+(use-package "neotree"
   :ensure t
-  :bind ("C-x C-d" . treemacs))
+  :bind ("C-x C-d" . neotree))
 
-(use-package "treemacs-magit"
-  :after 'treemacs
-  :ensure t)
+(use-package "all-the-icons")
 
 (use-package "golden-ratio" 
   :ensure t
@@ -165,7 +192,7 @@
     (< (nth 1 (window-edges (selected-window))) (nth 1 (window-edges (next-window))))))
 
 
-(defun rotate()
+(defun rotate ()
   "Rotate two-window-setups between Left-Right split and Top-Bottom split"
   (interactive)
   (when (eq (count-windows) 2)
@@ -174,7 +201,6 @@
       (delete-other-windows)
       (eval mknew)
       (set-window-buffer (next-window) buffer))))
-
 
 
 ;;; === load other files ================================================
